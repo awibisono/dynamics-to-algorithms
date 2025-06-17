@@ -1,0 +1,3 @@
+markdown: gfm
+kramdown:
+  math_engine_opts: { preview: false }
