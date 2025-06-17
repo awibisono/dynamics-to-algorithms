@@ -1,0 +1,38 @@
+name: Build notes
+
+on:
+  push:
+    paths: ["**.tex"]          # only run when .tex changes
+  workflow_dispatch:           # manual trigger
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pandoc + minimal TeX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y pandoc texlive-latex-base texlive-latex-extra
+
+      - name: Convert LaTeX → GitHub-Flavoured Markdown
+        run: |
+          mkdir -p docs
+          for f in $(git ls-files '*.tex'); do
+            base=$(basename "$f" .tex)
+            pandoc "$f" \
+              --from=latex \
+              --to=gfm+tex_math_dollars \
+              --standalone \
+              --wrap=preserve \
+              -o "docs/${base}.md"
+          done
+
+      - name: Commit generated Markdown
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name  "github-actions[bot]"
+          git add docs/*.md
+          git commit -m "Auto-build: convert LaTeX to MD" || true
+          git push
